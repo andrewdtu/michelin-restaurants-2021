@@ -1,0 +1,59 @@
+---
+title: "portfolio3"
+author: "Andrew Tu"
+date: "4/11/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(tidyverse)
+library(leaflet)
+library(DT)
+library(htmltools)
+library(priceR)
+rates <- exchange_rate_latest('USD')%>%
+  rename(Currency = currency)
+
+selected_columns <- c('Name','Longitude','Latitude','Location','Award','Cuisine','PhoneNumber','Address','Url','MinPrice','Currency','WebsiteUrl')
+columns_drop_with_na <- c('Name','Longitude','Latitude','Location','Award','Cuisine','Address','Url','MinPrice','Currency')
+
+
+
+michelin <- read_csv('michelin_my_maps.csv')%>%
+
+  select(selected_columns)%>%
+  drop_na(columns_drop_with_na)%>%
+  mutate(cuisines = as.list(strsplit(Cuisine,split=', ')))%>%
+  mutate(label = paste('Restaurant: ', Name,
+                       '<br>Award: ', Award,
+                       '<br>Cuisine Type: ', Cuisine))%>%
+  mutate(icon_color = case_when(
+    Award == '3 MICHELIN Stars' ~ "orange",
+    Award == '2 MICHELIN Stars' ~ "purple",
+    Award == '1 MICHELIN Star' ~ "blue",
+    Award == 'Bib Gourmand' ~ "green"))%>%
+  left_join(rates)%>%
+  mutate(usd_minprice = round(MinPrice/one_usd_is_equivalent_to ))
+
+cuisine_list <- pull(michelin, cuisines) %>%
+  unlist()%>%
+  unique()%>%
+  sort()
+
+award_list <- pull(michelin, Award) %>%
+  unique()
+
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+ct_michelin <- SharedData$new(data, key = ~Name)
+```
